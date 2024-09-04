@@ -240,32 +240,47 @@ void Explorerplusplus::OnShowListViewContextMenu(const POINT &ptScreen)
 
 void Explorerplusplus::OnListViewBackgroundRClick(POINT *pCursorPos)
 {
-	const auto &selectedTab = GetActivePane()->GetTabContainer()->GetSelectedTab();
-	auto pidlDirectory = selectedTab.GetShellBrowser()->GetDirectoryIdl();
-
-	ShellContextMenu shellContextMenu(pidlDirectory.get(), {}, this, m_pStatusBar);
-
-	auto serviceProvider = winrt::make_self<ServiceProvider>();
-
-	auto newMenuClient = winrt::make<NewMenuClient>(selectedTab.GetShellBrowser());
-	serviceProvider->RegisterService(IID_INewMenuClient, newMenuClient.get());
-
-	winrt::com_ptr<IFolderView2> folderView =
-		winrt::make<FolderView>(selectedTab.GetShellBrowserWeak());
-	serviceProvider->RegisterService(IID_IFolderView, folderView.get());
-
-	auto shellView = winrt::make<ShellView>(selectedTab.GetShellBrowserWeak(), this, false);
-	serviceProvider->RegisterService(SID_DefView, shellView.get());
-
-	ShellContextMenu::Flags flags = ShellContextMenu::Flags::Standard;
-
+	// Shift key pressed, show shell context menu
 	if (IsKeyDown(VK_SHIFT))
-	{
-		WI_SetFlag(flags, ShellContextMenu::Flags::ExtendedVerbs);
-	}
+    {
+		const auto &selectedTab = GetActivePane()->GetTabContainer()->GetSelectedTab();
+		auto pidlDirectory = selectedTab.GetShellBrowser()->GetDirectoryIdl();
 
-	shellContextMenu.ShowMenu(selectedTab.GetShellBrowser()->GetListView(), pCursorPos,
-		serviceProvider.get(), flags);
+		ShellContextMenu shellContextMenu(pidlDirectory.get(), {}, this, m_pStatusBar);
+
+		auto serviceProvider = winrt::make_self<ServiceProvider>();
+
+		auto newMenuClient = winrt::make<NewMenuClient>(selectedTab.GetShellBrowser());
+		serviceProvider->RegisterService(IID_INewMenuClient, newMenuClient.get());
+
+		winrt::com_ptr<IFolderView2> folderView =
+			winrt::make<FolderView>(selectedTab.GetShellBrowserWeak());
+		serviceProvider->RegisterService(IID_IFolderView, folderView.get());
+
+		auto shellView = winrt::make<ShellView>(selectedTab.GetShellBrowserWeak(), this, false);
+		serviceProvider->RegisterService(SID_DefView, shellView.get());
+
+		ShellContextMenu::Flags flags = ShellContextMenu::Flags::Standard;
+
+		if (IsKeyDown(VK_SHIFT))
+		{
+			WI_SetFlag(flags, ShellContextMenu::Flags::ExtendedVerbs);
+		}
+
+		shellContextMenu.ShowMenu(selectedTab.GetShellBrowser()->GetListView(), pCursorPos,
+			serviceProvider.get(), flags);
+	}
+	// Show custom context menu
+	else
+    {
+		auto parentMenu = wil::unique_hmenu(LoadMenu(m_resourceInstance, MAKEINTRESOURCE(IDR_LIST_BACKGROUND_MENU)));
+		HMENU menu = GetSubMenu(parentMenu.get(), 0);
+		MenuHelper::EnableItem(menu, IDM_EDIT_PASTE, CanPaste(PasteType::Normal));
+		MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, CanPaste(PasteType::Shortcut));
+		const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
+				pCursorPos->x, pCursorPos->y, 0, m_hActiveListView, nullptr);
+		SendMessage(GetCoreInterface()->GetMainWindow(), WM_COMMAND, MAKEWPARAM(command, 0), 0);
+    }
 }
 
 void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
