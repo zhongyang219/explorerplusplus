@@ -32,6 +32,20 @@
 #include "../Helper/ShellHelper.h"
 #include "../Helper/WinRTBaseWrapper.h"
 #include <wil/com.h>
+#include "../Helper/DpiCompatibility.h"
+
+const std::map<UINT, Icon> LIST_VIEW_RIGHT_CLICK_MENU_IMAGE_MAPPINGS = {
+	{ IDM_EDIT_CUT, Icon::Cut },
+	{ IDM_EDIT_COPY, Icon::Copy },
+	{ IDM_EDIT_PASTE, Icon::Paste },
+	{ IDM_EDIT_PASTESHORTCUT, Icon::PasteShortcut },
+	{ IDM_FILE_DELETE, Icon::Delete },
+	{ IDM_FILE_RENAME, Icon::Rename },
+	{ IDM_FILE_PROPERTIES, Icon::Properties },
+	{ IDM_VIEW_REFRESH, Icon::Refresh },
+	{ IDM_FILE_OPENCOMMANDPROMPT, Icon::CommandLine },
+	{ IDM_ACTIONS_NEWFOLDER, Icon::NewFolder },
+};
 
 LRESULT CALLBACK Explorerplusplus::ListViewProcStub(HWND hwnd, UINT uMsg, WPARAM wParam,
 	LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
@@ -275,6 +289,9 @@ void Explorerplusplus::OnListViewBackgroundRClick(POINT *pCursorPos)
     {
 		auto parentMenu = wil::unique_hmenu(LoadMenu(m_resourceInstance, MAKEINTRESOURCE(IDR_LIST_BACKGROUND_MENU)));
 		HMENU menu = GetSubMenu(parentMenu.get(), 0);
+		// Set nume icons
+		std::vector<wil::unique_hbitmap> menuImages;
+		AddImagesToListViewContextMenu(menu, menuImages);
 		MenuHelper::EnableItem(menu, IDM_EDIT_PASTE, CanPaste(PasteType::Normal));
 		MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, CanPaste(PasteType::Shortcut));
 		const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
@@ -319,8 +336,12 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 		else
 		{
 			auto parentMenu = wil::unique_hmenu(LoadMenu(m_resourceInstance, MAKEINTRESOURCE(IDR_LIST_ITEM_CONTEXT_MENU)));
-
 			HMENU menu = GetSubMenu(parentMenu.get(), 0);
+
+            // Set nume icons
+			std::vector<wil::unique_hbitmap> menuImages;
+			AddImagesToListViewContextMenu(menu, menuImages);
+
 			MenuHelper::EnableItem(menu, IDM_EDIT_PASTE, CanPaste(PasteType::Normal));
 			MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, CanPaste(PasteType::Shortcut));
 			MenuHelper::EnableItem(menu, IDM_EDIT_COPY, CanCopy());
@@ -476,6 +497,16 @@ void Explorerplusplus::OnListViewPaste()
 		pDropHandler->CopyClipboardData(clipboardObject.get(), m_hContainer, szDestination,
 			dropFilesCallback);
 		pDropHandler->Release();
+	}
+}
+
+void Explorerplusplus::AddImagesToListViewContextMenu(HMENU menu, std::vector<wil::unique_hbitmap> &menuImages)
+{
+	UINT dpi = DpiCompatibility::GetInstance().GetDpiForWindow(m_hActiveListView);
+	for (const auto &mapping : LIST_VIEW_RIGHT_CLICK_MENU_IMAGE_MAPPINGS)
+	{
+		ResourceHelper::SetMenuItemImage(menu, mapping.first,
+			GetCoreInterface()->GetIconResourceLoader(), mapping.second, dpi, menuImages);
 	}
 }
 

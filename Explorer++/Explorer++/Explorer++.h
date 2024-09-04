@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -285,6 +285,7 @@ private:
 	void OnListViewCopyUniversalPaths() const;
 	void OnListViewSetFileAttributes() const;
 	void OnListViewPaste();
+	void AddImagesToListViewContextMenu(HMENU menu, std::vector<wil::unique_hbitmap> &menuImages);
 
 	/* TreeView private message handlers. */
 	void OnTreeViewCopyItemPath() const;
