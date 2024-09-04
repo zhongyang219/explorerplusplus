@@ -1,6 +1,6 @@
-//{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by Explorer++.rc
+﻿//{{NO_DEPENDENCIES}}
+// Microsoft Visual C++ 生成的包含文件。
+// 供 Explorer++.rc 使用
 //
 #define IDD_OPTIONS_FILES_FOLDERS       9
 #define IDD_MANAGE_BOOKMARKS            10
@@ -217,6 +217,7 @@
 #define IDS_BACKGROUND_CONTEXT_MENU_PASTE_SHORTCUT 399
 #define IDS_GENERAL_OPEN_IN_NEW_TAB_HELP_TEXT 400
 #define IDS_SEARCH_OPEN_ITEM_LOCATION_HELP_TEXT 401
+#define IDR_LIST_ITEM_CONTEXT_MENU      402
 #define IDC_DEFAULTCOLUMNS_DESCRIPTION  1001
 #define IDC_COLUMNS_DESCRIPTION         1001
 #define IDC_SETTINGS_CHECK_EXTENSIONS   1002
@@ -1016,7 +1017,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        402
+#define _APS_NEXT_RESOURCE_VALUE        403
 #define _APS_NEXT_COMMAND_VALUE         40552
 #define _APS_NEXT_CONTROL_VALUE         1374
 #define _APS_NEXT_SYMED_VALUE           101

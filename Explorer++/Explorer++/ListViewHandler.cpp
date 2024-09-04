@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -271,32 +271,59 @@ void Explorerplusplus::OnListViewBackgroundRClick(POINT *pCursorPos)
 void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 {
 	int nSelected = ListView_GetSelectedCount(m_hActiveListView);
-
 	if (nSelected > 0)
-	{
-		std::vector<unique_pidl_child> pidlPtrs;
-		std::vector<PCITEMID_CHILD> pidlItems;
-		int iItem = -1;
-
-		while ((iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED)) != -1)
-		{
-			auto pidlPtr = m_pActiveShellBrowser->GetItemChildIdl(iItem);
-
-			pidlItems.push_back(pidlPtr.get());
-			pidlPtrs.push_back(std::move(pidlPtr));
-		}
-
-		auto pidlDirectory = m_pActiveShellBrowser->GetDirectoryIdl();
-
-		ShellContextMenu::Flags flags = ShellContextMenu::Flags::Rename;
-
+    {
+		// Shift key pressed, show shell context menu
 		if (IsKeyDown(VK_SHIFT))
 		{
-			WI_SetFlag(flags, ShellContextMenu::Flags::ExtendedVerbs);
-		}
+			std::vector<unique_pidl_child> pidlPtrs;
+			std::vector<PCITEMID_CHILD> pidlItems;
+			int iItem = -1;
 
-		ShellContextMenu shellContextMenu(pidlDirectory.get(), pidlItems, this, m_pStatusBar);
-		shellContextMenu.ShowMenu(m_hActiveListView, pCursorPos, nullptr, flags);
+			while ((iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED)) != -1)
+			{
+				auto pidlPtr = m_pActiveShellBrowser->GetItemChildIdl(iItem);
+
+				pidlItems.push_back(pidlPtr.get());
+				pidlPtrs.push_back(std::move(pidlPtr));
+			}
+
+			auto pidlDirectory = m_pActiveShellBrowser->GetDirectoryIdl();
+
+			ShellContextMenu::Flags flags = ShellContextMenu::Flags::Rename;
+
+			if (IsKeyDown(VK_SHIFT))
+			{
+				WI_SetFlag(flags, ShellContextMenu::Flags::ExtendedVerbs);
+			}
+
+			ShellContextMenu shellContextMenu(pidlDirectory.get(), pidlItems, this, m_pStatusBar);
+			shellContextMenu.ShowMenu(m_hActiveListView, pCursorPos, nullptr, flags);
+		}
+		// Show custom context menu
+		else
+		{
+			auto parentMenu = wil::unique_hmenu(LoadMenu(m_resourceInstance, MAKEINTRESOURCE(IDR_LIST_ITEM_CONTEXT_MENU)));
+
+			HMENU menu = GetSubMenu(parentMenu.get(), 0);
+			MenuHelper::EnableItem(menu, IDM_EDIT_PASTE, CanPaste(PasteType::Normal));
+			MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, CanPaste(PasteType::Shortcut));
+			MenuHelper::EnableItem(menu, IDM_EDIT_COPY, CanCopy());
+			MenuHelper::EnableItem(menu, IDM_EDIT_CUT, CanCut());
+
+			const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
+					pCursorPos->x, pCursorPos->y, 0, m_hActiveListView, nullptr);
+			if (command == IDM_APP_OPEN)
+			{
+				int iItem = -1;
+				iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED);
+				OpenListViewItem(iItem, DetermineOpenDisposition(false, IsKeyDown(LVKF_CONTROL), IsKeyDown(LVKF_SHIFT)));
+			}
+			else
+			{
+				SendMessage(GetCoreInterface()->GetMainWindow(), WM_COMMAND, MAKEWPARAM(command, 0), 0);
+			}
+		}
 	}
 }
 
