@@ -305,23 +305,31 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 	int nSelected = ListView_GetSelectedCount(m_hActiveListView);
 	if (nSelected > 0)
     {
+		std::vector<unique_pidl_child> pidlPtrs;
+		std::vector<PCITEMID_CHILD> pidlItems;
+		BOOL bSeenDirectory = FALSE;
+		int iItem = -1;
+		std::vector<PCITEMID_CHILD> pidFolderItems;
+
+		while ((iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED)) != -1)
+		{
+			auto pidlPtr = m_pActiveShellBrowser->GetItemChildIdl(iItem);
+
+			pidlItems.push_back(pidlPtr.get());
+			pidlPtrs.push_back(std::move(pidlPtr));
+			DWORD dwAttributes = m_pActiveShellBrowser->GetItemFileFindData(iItem).dwFileAttributes;
+            if ((dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)
+            {
+				bSeenDirectory = TRUE;
+				pidFolderItems.push_back(pidlItems.back());
+			}
+		}
+
+		auto pidlDirectory = m_pActiveShellBrowser->GetDirectoryIdl();
+
 		// Shift key pressed, show shell context menu
 		if (IsKeyDown(VK_SHIFT))
 		{
-			std::vector<unique_pidl_child> pidlPtrs;
-			std::vector<PCITEMID_CHILD> pidlItems;
-			int iItem = -1;
-
-			while ((iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED)) != -1)
-			{
-				auto pidlPtr = m_pActiveShellBrowser->GetItemChildIdl(iItem);
-
-				pidlItems.push_back(pidlPtr.get());
-				pidlPtrs.push_back(std::move(pidlPtr));
-			}
-
-			auto pidlDirectory = m_pActiveShellBrowser->GetDirectoryIdl();
-
 			ShellContextMenu::Flags flags = ShellContextMenu::Flags::Rename;
 
 			if (IsKeyDown(VK_SHIFT))
@@ -346,15 +354,22 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 			MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, CanPaste(PasteType::Shortcut));
 			MenuHelper::EnableItem(menu, IDM_EDIT_COPY, CanCopy());
 			MenuHelper::EnableItem(menu, IDM_EDIT_CUT, CanCut());
+			MenuHelper::EnableItem(menu, ID_OPEN_IN_NEW_TAB, bSeenDirectory);
 
 			const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
 					pCursorPos->x, pCursorPos->y, 0, m_hActiveListView, nullptr);
 			if (command == IDM_APP_OPEN)
 			{
-				int iItem = -1;
-				iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED);
-				OpenListViewItem(iItem, DetermineOpenDisposition(false, IsKeyDown(LVKF_CONTROL), IsKeyDown(LVKF_SHIFT)));
+				OpenAllSelectedItems(DetermineOpenDisposition(false, IsKeyDown(VK_CONTROL), IsKeyDown(VK_SHIFT)));
 			}
+			else if (command == ID_OPEN_IN_NEW_TAB)
+            {
+				for (auto &folderItem : pidFolderItems)
+				{
+					std::vector<PidlChild> _pidlItems{ folderItem };
+					HandleCustomMenuItem(pidlDirectory.get(), _pidlItems, OPEN_IN_NEW_TAB_MENU_ITEM_ID);
+				}
+            }
 			else
 			{
 				SendMessage(GetCoreInterface()->GetMainWindow(), WM_COMMAND, MAKEWPARAM(command, 0), 0);
