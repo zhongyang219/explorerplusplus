@@ -354,6 +354,9 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 			MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, CanPaste(PasteType::Shortcut));
 			MenuHelper::EnableItem(menu, IDM_EDIT_COPY, CanCopy());
 			MenuHelper::EnableItem(menu, IDM_EDIT_CUT, CanCut());
+			MenuHelper::EnableItem(menu, IDM_FILE_DELETE, CanDelete());
+			MenuHelper::EnableItem(menu, IDM_FILE_RENAME, CanRename());
+			MenuHelper::EnableItem(menu, IDM_FILE_PROPERTIES, CanShowFileProperties());
 			MenuHelper::EnableItem(menu, ID_OPEN_IN_NEW_TAB, bSeenDirectory);
 
 			const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
@@ -368,6 +371,30 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 				{
 					std::vector<PidlChild> _pidlItems{ folderItem };
 					HandleCustomMenuItem(pidlDirectory.get(), _pidlItems, OPEN_IN_NEW_TAB_MENU_ITEM_ID);
+				}
+            }
+            else if (command == ID_POPUP_CREATEDESKTOPSHORTCUT)
+            {
+                //获取桌面路径
+				std::wstring desktopDir = GetDesktopPath();
+
+                iItem = -1;
+                while ((iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED)) != -1)
+				{
+					auto itemName = m_pActiveShellBrowser->GetItemName(iItem);
+					auto itemFullName = m_pActiveShellBrowser->GetItemFullName(iItem);
+
+					const DWORD dwAttributes = m_pActiveShellBrowser->GetItemFileFindData(iItem).dwFileAttributes;
+                    //是文件夹，在桌面创建指向该文件的Explorer++的快捷方式
+					if ((dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)
+					{
+						CreateFileShortcut(desktopDir.c_str(), NULL, (itemName + L".lnk").c_str(), NULL, 0, 0, 1, itemFullName.c_str());
+					}
+                    //是文件，创建文件的桌面快捷方式
+                    else
+                    {
+						CreateFileShortcut(desktopDir.c_str(), itemFullName.c_str(), (itemName + L".lnk").c_str());
+                    }
 				}
             }
 			else

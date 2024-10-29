@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -1413,4 +1413,124 @@ HRESULT MaybeGetLinkTarget(HWND hwnd, PCIDLIST_ABSOLUTE pidl, LinkTargetRetrieva
 	RETURN_IF_FAILED(shellLink->GetIDList(wil::out_param(targetPidl)));
 
 	return S_OK;
+}
+
+std::wstring GetDesktopPath()
+{
+	PIDLIST_ABSOLUTE ppidl;
+	TCHAR pszDesktopPath[MAX_PATH];
+	if (SHGetFolderLocation(NULL, CSIDL_DESKTOP, NULL, NULL, &ppidl) == S_OK)
+	{
+		SHGetPathFromIDList(ppidl, pszDesktopPath);
+		CoTaskMemFree(ppidl);
+	}
+	return std::wstring(pszDesktopPath);
+}
+
+bool CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName, LPCTSTR lpszLnkFileName,
+	LPCTSTR lpszWorkDir, WORD wHotkey, LPCTSTR lpszDescription, int iShowCmd, LPCTSTR lpszArguments,
+	int nIconOffset)
+{
+	if (lpszLnkFileDir == NULL)
+		return false;
+
+	HRESULT hr;
+	IShellLink *pLink; // IShellLink对象指针
+	IPersistFile *ppf; // IPersisFil对象指针
+
+	// 创建IShellLink对象
+	hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink,
+		(void **) &pLink);
+	if (FAILED(hr))
+		return false;
+
+	// 从IShellLink对象中获取IPersistFile接口
+	hr = pLink->QueryInterface(IID_IPersistFile, (void **) &ppf);
+	if (FAILED(hr))
+	{
+		pLink->Release();
+		return false;
+	}
+
+	TCHAR file_path[MAX_PATH]; // 当前进程exe文件路径
+	GetModuleFileName(NULL, file_path, MAX_PATH);
+	LPCTSTR pFilePath; // 快捷方式目标
+
+	// 目标
+	if (lpszFileName == NULL)
+		pFilePath = file_path;
+	else
+		pFilePath = lpszFileName;
+	pLink->SetPath(pFilePath);
+
+	// 工作目录
+	if (lpszWorkDir != NULL)
+	{
+		pLink->SetWorkingDirectory(lpszWorkDir);
+	}
+	else
+	{
+		// 设置工作目录为快捷方式目标所在位置
+		std::wstring workDir = pFilePath;
+		size_t index = workDir.find_last_of(_T("\\/"));
+		if (index != workDir.npos)
+			workDir = workDir.substr(0, index);
+		pLink->SetWorkingDirectory(workDir.c_str());
+	}
+
+	// 快捷键
+	if (wHotkey != 0)
+		pLink->SetHotkey(wHotkey);
+
+	// 备注
+	if (lpszDescription != NULL)
+		pLink->SetDescription(lpszDescription);
+
+	// 显示方式
+	pLink->SetShowCmd(iShowCmd);
+
+	// 参数
+	if (lpszArguments != NULL)
+		pLink->SetArguments(lpszArguments);
+
+	// 图标
+	if (nIconOffset > 0)
+		pLink->SetIconLocation(pFilePath, nIconOffset);
+
+	// 快捷方式的路径 + 名称
+	std::wstring shortcutName;
+	shortcutName = lpszLnkFileDir;
+	if (!shortcutName.empty() && shortcutName.back() != _T('\\') && shortcutName.back() != _T('/'))
+		shortcutName.push_back(_T('\\'));
+
+	if (lpszLnkFileName != NULL) // 指定了快捷方式的名称
+	{
+		shortcutName += lpszLnkFileName;
+	}
+	else
+	{
+		// 没有指定名称，就从取指定文件的文件名作为快捷方式名称。
+		std::wstring fileName = pFilePath;
+
+		size_t index1, index2;
+		index1 = fileName.find_last_of(_T("\\/"));
+		index2 = fileName.rfind(_T('.'));
+
+		if (index1 == std::wstring::npos || index2 == std::wstring::npos || index1 >= index2)
+		{
+			ppf->Release();
+			pLink->Release();
+			return false;
+		}
+		fileName = fileName.substr(index1 + 1, index2 - index1 - 1);
+		fileName += _T(".lnk");
+		shortcutName += fileName;
+	}
+
+	// 保存快捷方式到指定目录下
+	hr = ppf->Save(shortcutName.c_str(), TRUE);
+
+	ppf->Release();
+	pLink->Release();
+	return SUCCEEDED(hr);
 }

@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -156,3 +156,24 @@ HRESULT ParseDisplayNameForNavigation(const std::wstring &itemPath, unique_pidl_
 
 HRESULT MaybeGetLinkTarget(PCIDLIST_ABSOLUTE pidl, unique_pidl_absolute &targetPidl);
 HRESULT MaybeResolveLinkTarget(HWND hwnd, PCIDLIST_ABSOLUTE pidl, unique_pidl_absolute &targetPidl);
+
+    // 获取桌面的路径
+std::wstring GetDesktopPath();
+
+    /*
+函数功能：对指定文件在指定的目录下创建其快捷方式
+函数参数：
+lpszLnkFileDir  指定目录，不能为NULL。
+lpszFileName    指定文件，为NULL表示当前进程的EXE文件。
+lpszLnkFileName 快捷方式名称，为NULL表示EXE文件名。
+lpszWorkDir		快捷方式工作目录，为NULL表示快捷方式目标所在位置
+wHotkey         为0表示不设置快捷键
+pszDescription  备注
+iShowCmd        运行方式，默认为常规窗口
+lpszArguments	命令行参数
+nIconOffset		使用的图标为应用程序中第几个图标
+*/
+bool CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName = NULL,
+	LPCTSTR lpszLnkFileName = NULL, LPCTSTR lpszWorkDir = NULL, WORD wHotkey = 0,
+	LPCTSTR lpszDescription = NULL, int iShowCmd = SW_SHOWNORMAL, LPCTSTR lpszArguments = NULL,
+	int nIconOffset = 0);
