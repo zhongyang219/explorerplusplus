@@ -358,6 +358,7 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 			MenuHelper::EnableItem(menu, IDM_FILE_RENAME, CanRename());
 			MenuHelper::EnableItem(menu, IDM_FILE_PROPERTIES, CanShowFileProperties());
 			MenuHelper::EnableItem(menu, ID_OPEN_IN_NEW_TAB, bSeenDirectory);
+			MenuHelper::EnableItem(menu, ID_POPUP_OPENWITH, !bSeenDirectory);
 
 			const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
 					pCursorPos->x, pCursorPos->y, 0, m_hActiveListView, nullptr);
@@ -395,6 +396,19 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
                     {
 						CreateFileShortcut(desktopDir.c_str(), itemFullName.c_str(), (itemName + L".lnk").c_str());
                     }
+				}
+            }
+            else if (command == ID_POPUP_OPENWITH)
+            {
+				iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED);
+				if (iItem >= 0)
+				{
+                    //不是文件夹才支持“打开方式”
+					if (!bSeenDirectory)
+					{
+						auto itemFullName = m_pActiveShellBrowser->GetItemFullName(iItem);
+						ShowOpenWithDialog(m_hActiveListView, itemFullName);
+					}
 				}
             }
 			else

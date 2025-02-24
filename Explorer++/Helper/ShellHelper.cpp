@@ -1534,3 +1534,15 @@ bool CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName, LPCTSTR lp
 	pLink->Release();
 	return SUCCEEDED(hr);
 }
+
+void ShowOpenWithDialog(HWND hwnd, const std::wstring &filePath)
+{
+	SHELLEXECUTEINFO sei = { sizeof(sei) };
+	sei.hwnd = hwnd;
+	sei.lpVerb = L"openas"; // 指定操作为“打开方式”
+	sei.lpFile = filePath.c_str();
+	sei.nShow = SW_SHOWNORMAL;
+	sei.fMask = SEE_MASK_INVOKEIDLIST; // 强制弹出“打开方式”对话框
+
+	ShellExecuteEx(&sei);
+}

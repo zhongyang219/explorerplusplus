@@ -177,3 +177,6 @@ bool CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName = NULL,
 	LPCTSTR lpszLnkFileName = NULL, LPCTSTR lpszWorkDir = NULL, WORD wHotkey = 0,
 	LPCTSTR lpszDescription = NULL, int iShowCmd = SW_SHOWNORMAL, LPCTSTR lpszArguments = NULL,
 	int nIconOffset = 0);
+
+// 弹出“打开方式”对话框
+void ShowOpenWithDialog(HWND hwnd, const std::wstring &filePath);
