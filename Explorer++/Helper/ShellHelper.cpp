@@ -1126,6 +1126,17 @@ HRESULT ShowMultipleFileProperties(PCIDLIST_ABSOLUTE pidlDirectory,
 	return ExecuteActionFromContextMenu(pidlDirectory, items, hwnd, _T("properties"), 0, nullptr);
 }
 
+void ShowFileProperty(const std::wstring &path, HWND hwnd)
+{
+	SHELLEXECUTEINFO sei = { sizeof(sei) };
+	sei.hwnd = hwnd;
+	sei.lpVerb = L"properties";
+	sei.lpFile = path.c_str();
+	sei.nShow = SW_SHOWNORMAL;
+	sei.fMask = SEE_MASK_INVOKEIDLIST;
+	ShellExecuteExW(&sei);
+}
+
 HRESULT ExecuteActionFromContextMenu(PCIDLIST_ABSOLUTE pidlDirectory,
 	const std::vector<PCITEMID_CHILD> &items, HWND hwnd, const std::wstring &action, DWORD mask,
 	IUnknown *site)

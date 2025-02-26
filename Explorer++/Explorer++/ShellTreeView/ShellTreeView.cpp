@@ -1358,7 +1358,9 @@ void ShellTreeView::StartRenamingItem(PCIDLIST_ABSOLUTE pidl)
 void ShellTreeView::ShowPropertiesOfSelectedItem() const
 {
 	auto pidlDirectory = GetSelectedNodePidl();
-	ShowMultipleFileProperties(pidlDirectory.get(), {}, m_hTreeView);
+	std::wstring itemFullName;
+	GetDisplayName(pidlDirectory.get(), SHGDN_FORPARSING, itemFullName);
+	ShowFileProperty(itemFullName, m_hTreeView);
 }
 
 void ShellTreeView::DeleteSelectedItem(bool permanent)
@@ -1523,9 +1525,32 @@ void ShellTreeView::OnShowContextMenu(const POINT &ptScreen)
 		MenuHelper::EnableItem(menu, IDM_EDIT_PASTESHORTCUT, m_coreInterface->CanPaste(PasteType::Shortcut));
 		MenuHelper::EnableItem(menu, IDM_EDIT_COPY, m_coreInterface->CanCopy());
 		MenuHelper::EnableItem(menu, IDM_EDIT_CUT, m_coreInterface->CanCut());
-		const UINT command = TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
+		MenuHelper::EnableItem(menu, IDM_APP_OPEN, FALSE);
+		MenuHelper::EnableItem(menu, ID_POPUP_OPENWITH, FALSE);
+		MenuHelper::EnableItem(menu, IDM_FILE_PROPERTIES, m_coreInterface->CanShowFileProperties());
+		const UINT command =
+			TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_VERTICAL | TPM_RETURNCMD,
 				finalPoint.x, finalPoint.y, 0, m_hTreeView, nullptr);
-		SendMessage(m_coreInterface->GetMainWindow(), WM_COMMAND, MAKEWPARAM(command, 0), 0);
+		auto pidl = GetNodePidl(targetItem);
+		if (command == ID_OPEN_IN_NEW_TAB)
+		{
+			auto disposition = m_config->openTabsInForeground ? OpenFolderDisposition::ForegroundTab : OpenFolderDisposition::BackgroundTab;
+			m_browserWindow->OpenItem(pidl.get(), disposition);
+		}
+        else if (command == ID_POPUP_CREATEDESKTOPSHORTCUT)
+        {
+			// 获取桌面路径
+			std::wstring desktopDir = GetDesktopPath();
+			std::wstring itemName;
+			GetDisplayName(pidl.get(), SHCONTF_FOLDERS, itemName);
+			std::wstring itemFullName;
+			GetDisplayName(pidl.get(), SHGDN_FORPARSING, itemFullName);
+			CreateFileShortcut(desktopDir.c_str(), NULL, (itemName + L".lnk").c_str(), NULL, 0, 0, 1, itemFullName.c_str());
+        }
+		else
+		{
+			SendMessage(m_coreInterface->GetMainWindow(), WM_COMMAND, MAKEWPARAM(command, 0), 0);
+		}
 	}
 }
 

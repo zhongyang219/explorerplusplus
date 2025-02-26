@@ -117,6 +117,7 @@ BOOL ExecuteFileAction(HWND hwnd, PCIDLIST_ABSOLUTE pidl, const std::wstring &ve
 HRESULT DecodeFriendlyPath(const std::wstring &friendlyPath, std::wstring &parsingPath);
 HRESULT ShowMultipleFileProperties(PCIDLIST_ABSOLUTE pidlDirectory,
 	const std::vector<PCITEMID_CHILD> &items, HWND hwnd);
+void ShowFileProperty(const std::wstring& path, HWND hwnd);
 HRESULT ExecuteActionFromContextMenu(PCIDLIST_ABSOLUTE pidlDirectory,
 	const std::vector<PCITEMID_CHILD> &items, HWND hwnd, const std::wstring &action, DWORD mask,
 	IUnknown *site);
