@@ -389,7 +389,10 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
                     //是文件夹，在桌面创建指向该文件的Explorer++的快捷方式
 					if ((dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)
 					{
-						CreateFileShortcut(desktopDir.c_str(), NULL, (itemName + L".lnk").c_str(), NULL, 0, 0, 1, itemFullName.c_str());
+						std::wstring arguments = L"\"";
+						arguments += itemFullName;
+						arguments += L"\"";
+						CreateFileShortcut(desktopDir.c_str(), NULL, (itemName + L".lnk").c_str(), NULL, 0, 0, 1, arguments.c_str());
 					}
                     //是文件，创建文件的桌面快捷方式
                     else
