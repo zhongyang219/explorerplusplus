@@ -40,6 +40,7 @@
 #include "../Helper/MenuHelper.h"
 #include "../Helper/ShellContextMenu.h"
 #include "../Helper/ShellHelper.h"
+#include "../Helper/DpiCompatibility.h"
 #include <wil/common.h>
 #include <propkey.h>
 
@@ -1633,6 +1634,9 @@ void ShellTreeView::UpdateSelection()
 	{
 		return;
 	}
+    
+    int itemHeight = DpiCompatibility::GetInstance().ScaleValue(m_hTreeView, 20);
+    SendMessage(m_hTreeView, TVM_SETITEMHEIGHT, itemHeight, 0);
 
 	TreeView_SelectItem(m_hTreeView, item);
 }
