@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -94,6 +94,7 @@ public:
 	Tab &CreateNewTab(NavigateParams &navigateParams, const TabSettings &tabSettings = {},
 		const FolderSettings *folderSettings = nullptr,
 		const FolderColumns *initialColumns = nullptr);
+	Tab &CreateOrSeleteTab(const std::wstring &directory);
 
 	Tab &GetTab(int tabId);
 	Tab *GetTabOptional(int tabId);

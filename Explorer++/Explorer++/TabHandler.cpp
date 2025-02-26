@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -260,8 +260,9 @@ void Explorerplusplus::CreateCommandLineTabs()
 			continue;
 		}
 
-		GetActivePane()->GetTabContainer()->CreateNewTab(*absolutePath,
-			TabSettings(_selected = true));
+		//GetActivePane()->GetTabContainer()->CreateNewTab(*absolutePath,
+		//	TabSettings(_selected = true));
+		GetActivePane()->GetTabContainer()->CreateOrSeleteTab(*absolutePath);
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -933,6 +933,29 @@ Tab &TabContainer::CreateNewTab(NavigateParams &navigateParams, const TabSetting
 	}
 
 	return SetUpNewTab(tab, navigateParams, tabSettings);
+}
+
+Tab &TabContainer::CreateOrSeleteTab(const std::wstring &directory)
+{
+	auto iter = std::find_if(m_tabs.begin(), m_tabs.end(), [&](const auto &pair) {
+		auto pidlDirectory = pair.second->GetShellBrowser()->GetDirectoryIdl();
+		auto path = GetFolderPathForDisplay(pidlDirectory.get());
+		return path == directory;
+	});
+
+	//标签不存在，创建一个新的标签
+	if (iter == m_tabs.end())
+	{
+		return CreateNewTab(directory, TabSettings(_selected = true));
+	}
+	//标签已存在，选中并返回已有标签
+	else
+	{
+		//选中标签
+		Tab &tab{ *iter->second };
+		SelectTab(tab);
+		return tab;
+	}
 }
 
 Tab &TabContainer::SetUpNewTab(Tab &tab, NavigateParams &navigateParams,
