@@ -1,4 +1,4 @@
-// Copyright (C) Explorer++ Project
+﻿// Copyright (C) Explorer++ Project
 // SPDX-License-Identifier: GPL-3.0-only
 // See LICENSE in the top level directory
 
@@ -34,6 +34,10 @@ OptionsDialog::OptionsDialog(HINSTANCE resourceInstance, HWND parent,
 
 INT_PTR OptionsDialog::OnInitDialog()
 {
+	auto treeView = GetDlgItem(m_hDlg, IDC_OPTIONS_PAGES_TREE);
+	int itemHeight = DpiCompatibility::GetInstance().ScaleValue(treeView, 22);
+	SendMessage(treeView, TVM_SETITEMHEIGHT, itemHeight, 0);
+
 	SetupSearchField();
 
 	if (!m_lastSelectedPageId)
