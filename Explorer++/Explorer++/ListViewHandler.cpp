@@ -33,6 +33,7 @@
 #include "../Helper/WinRTBaseWrapper.h"
 #include <wil/com.h>
 #include "../Helper/DpiCompatibility.h"
+#include "../Helper/WIC.h"
 
 const std::map<UINT, Icon> LIST_VIEW_RIGHT_CLICK_MENU_IMAGE_MAPPINGS = {
 	{ IDM_EDIT_CUT, Icon::Cut },
@@ -358,6 +359,7 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 				UINT menuId = SHELL_CMD_ID_START;
 				for (const auto &cmdInfo : shellCmdList)
 				{
+
 					MENUITEMINFO mii = { 0 };
 					mii.cbSize = sizeof(MENUITEMINFO); // 结构体大小
 					mii.fMask = MIIM_STRING | MIIM_ID; // 设置菜单项文本和ID
@@ -366,6 +368,10 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 					mii.cch = static_cast<UINT>(cmdInfo.displayName.size()); // 文本长度
 					menuId++;
 					InsertMenuItem(menu, 3, TRUE, &mii);
+					// 从 EXE 文件中提取图标
+					HICON hIcon{};
+					ExtractIconExW(cmdInfo.iconPath.c_str(), 0, NULL, &hIcon, 1);
+					CMenuIcon::AddIconToMenuItem(menu, 3, TRUE, hIcon);
 				}
 			}
 

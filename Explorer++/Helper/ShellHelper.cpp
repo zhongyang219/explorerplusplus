@@ -1575,11 +1575,26 @@ static std::wstring GetRegKeyString(HKEY hKey, const wchar_t* name)
 	return std::wstring();
 }
 
+static std::wstring GetCommandExePath(const std::wstring command)
+{
+	size_t index1 = command.find(L'\"');
+	if (index1 != std::wstring::npos)
+	{
+		size_t index2 = command.find(L'\"', index1 + 1);
+		if (index2 != std::wstring::npos)
+		{
+			return command.substr(index1 + 1, index2 - index1 - 1);
+		}
+	}
+	return std::wstring();
+}
+
 static RegShellCmdInfo GetRegShellInfo(HKEY hKey, const std::wstring& subKey)
 {
 	RegShellCmdInfo info;
 	info.displayName = GetRegKeyString(hKey, NULL);
 	info.icon = GetRegKeyString(hKey, L"Icon");
+	info.iconPath = GetCommandExePath(info.icon);
 
 	//打开command
 	HKEY hCommandKey;
@@ -1588,16 +1603,7 @@ static RegShellCmdInfo GetRegShellInfo(HKEY hKey, const std::wstring& subKey)
 	{
 		info.commnad = GetRegKeyString(hCommandKey, NULL);
 		// 提取命令的exe文件
-		size_t index1 = info.commnad.find(L'\"');
-		if (index1 != std::wstring::npos)
-		{
-			size_t index2 = info.commnad.find(L'\"', index1 + 1);
-			if (index2 != std::wstring::npos)
-			{
-				info.exePath = info.commnad.substr(index1 + 1, index2 - index1 - 1);
-			}
-		}
-
+		info.exePath = GetCommandExePath(info.commnad);
 		RegCloseKey(hCommandKey);
 	}
 	return info;

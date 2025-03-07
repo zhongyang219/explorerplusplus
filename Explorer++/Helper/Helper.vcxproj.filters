@@ -163,6 +163,9 @@
     <ClCompile Include="ScopedBitmapLock.cpp">
       <Filter>Miscellaneous</Filter>
     </ClCompile>
+    <ClCompile Include="WIC.cpp">
+      <Filter>WIC</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseDialog.h">
@@ -351,6 +354,9 @@
     <ClInclude Include="UniqueVariableSizeStruct.h">
       <Filter>Miscellaneous</Filter>
     </ClInclude>
+    <ClInclude Include="WIC.h">
+      <Filter>WIC</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Dialog Support">
@@ -382,6 +388,9 @@
     </Filter>
     <Filter Include="COM">
       <UniqueIdentifier>{a80deb2e-55fa-460e-b05b-036fb27a4988}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WIC">
+      <UniqueIdentifier>{8b3b129d-369a-4332-972d-1097ea904e3e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -187,6 +187,7 @@ struct RegShellCmdInfo
 	std::wstring keyName;
 	std::wstring displayName;
 	std::wstring icon;
+	std::wstring iconPath;
 	std::wstring commnad;
 	std::wstring exePath;
 };
