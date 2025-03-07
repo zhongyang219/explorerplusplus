@@ -181,3 +181,14 @@ bool CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName = NULL,
 
 // 弹出“打开方式”对话框
 void ShowOpenWithDialog(HWND hwnd, const std::wstring &filePath);
+
+struct RegShellCmdInfo
+{
+	std::wstring keyName;
+	std::wstring displayName;
+	std::wstring icon;
+	std::wstring commnad;
+	std::wstring exePath;
+};
+//获取注册表“\HKEY_CURRENT_USER\SOFTWARE\Classes\*\shell”下的命令
+void GetRegShellCommand(std::vector<RegShellCmdInfo> &shellCommandList);

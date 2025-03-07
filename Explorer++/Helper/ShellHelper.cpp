@@ -1557,3 +1557,80 @@ void ShowOpenWithDialog(HWND hwnd, const std::wstring &filePath)
 
 	ShellExecuteEx(&sei);
 }
+
+static std::wstring GetRegKeyString(HKEY hKey, const wchar_t* name)
+{
+	DWORD valueType;
+	BYTE valueData[1024]; // 缓冲区，用于存储键值数据
+	DWORD valueDataSize = sizeof(valueData);
+
+	// 查询指定键值
+	if (RegQueryValueExW(hKey, name, NULL, &valueType, valueData, &valueDataSize) == ERROR_SUCCESS)
+	{
+		if (valueType == REG_SZ)
+		{
+			return (const wchar_t *)valueData;
+		}
+	}
+	return std::wstring();
+}
+
+static RegShellCmdInfo GetRegShellInfo(HKEY hKey, const std::wstring& subKey)
+{
+	RegShellCmdInfo info;
+	info.displayName = GetRegKeyString(hKey, NULL);
+	info.icon = GetRegKeyString(hKey, L"Icon");
+
+	//打开command
+	HKEY hCommandKey;
+	std::wstring commandKey = subKey + L"\\command";
+	if (RegOpenKeyExW(HKEY_CURRENT_USER, commandKey.c_str(), 0, KEY_READ, &hCommandKey) == ERROR_SUCCESS)
+	{
+		info.commnad = GetRegKeyString(hCommandKey, NULL);
+		// 提取命令的exe文件
+		size_t index1 = info.commnad.find(L'\"');
+		if (index1 != std::wstring::npos)
+		{
+			size_t index2 = info.commnad.find(L'\"', index1 + 1);
+			if (index2 != std::wstring::npos)
+			{
+				info.exePath = info.commnad.substr(index1 + 1, index2 - index1 - 1);
+			}
+		}
+
+		RegCloseKey(hCommandKey);
+	}
+	return info;
+}
+
+void GetRegShellCommand(std::vector<RegShellCmdInfo> &shellCommandList)
+{
+	const wchar_t *keyPath = L"SOFTWARE\\Classes\\*\\shell\\";
+	HKEY hKey;
+	if (RegOpenKeyExW(HKEY_CURRENT_USER, keyPath, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+	{
+		return;
+	}
+
+	WCHAR subKeyName[MAX_PATH];
+	DWORD subKeyNameSize = MAX_PATH;
+	DWORD index = 0;
+
+	while (RegEnumKeyExW(hKey, index, subKeyName, &subKeyNameSize, NULL, NULL, NULL, NULL)
+		== ERROR_SUCCESS)
+	{
+		HKEY hSubKey;
+		std::wstring subKey = keyPath;
+		subKey += subKeyName;
+		if (RegOpenKeyExW(HKEY_CURRENT_USER, subKey.c_str(), 0, KEY_READ, &hSubKey) == ERROR_SUCCESS)
+		{
+			RegShellCmdInfo info = GetRegShellInfo(hSubKey, subKey);
+			info.keyName = subKeyName;
+			shellCommandList.push_back(info);
+			RegCloseKey(hSubKey);
+		}
+		index++;
+	}
+
+	RegCloseKey(hKey);
+}

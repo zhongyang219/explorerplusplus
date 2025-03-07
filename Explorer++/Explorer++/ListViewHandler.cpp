@@ -346,6 +346,29 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 			auto parentMenu = wil::unique_hmenu(LoadMenu(m_resourceInstance, MAKEINTRESOURCE(IDR_LIST_ITEM_CONTEXT_MENU)));
 			HMENU menu = GetSubMenu(parentMenu.get(), 0);
 
+			// 获取注册表中的shell菜单
+			std::vector<RegShellCmdInfo> shellCmdList;
+			GetRegShellCommand(shellCmdList);
+
+			// 添加Shell菜单
+			const UINT SHELL_CMD_ID_START = 650000;
+			const UINT SHELL_CMD_ID_END = static_cast<UINT>(650000 + shellCmdList.size());
+			if (!bSeenDirectory)
+			{
+				UINT menuId = SHELL_CMD_ID_START;
+				for (const auto &cmdInfo : shellCmdList)
+				{
+					MENUITEMINFO mii = { 0 };
+					mii.cbSize = sizeof(MENUITEMINFO); // 结构体大小
+					mii.fMask = MIIM_STRING | MIIM_ID; // 设置菜单项文本和ID
+					mii.wID = menuId; // 菜单项ID
+					mii.dwTypeData = (wchar_t *) cmdInfo.displayName.data(); // 菜单项文本
+					mii.cch = static_cast<UINT>(cmdInfo.displayName.size()); // 文本长度
+					menuId++;
+					InsertMenuItem(menu, 3, TRUE, &mii);
+				}
+			}
+
             // Set nume icons
 			std::vector<wil::unique_hbitmap> menuImages;
 			AddImagesToListViewContextMenu(menu, menuImages);
@@ -414,6 +437,22 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 					}
 				}
             }
+			//响应shell菜单项
+			else if (command >= SHELL_CMD_ID_START && command < SHELL_CMD_ID_END)
+			{
+				iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED);
+				if (iItem >= 0 && !bSeenDirectory)
+				{
+					auto itemFullName = m_pActiveShellBrowser->GetItemFullName(iItem);
+					int cmdIndex = command - SHELL_CMD_ID_START;
+					if (cmdIndex >= 0 && cmdIndex < static_cast<int>(shellCmdList.size()))
+					{
+						const auto& cmdInfo = shellCmdList[cmdIndex];
+						if (!cmdInfo.exePath.empty())
+							ShellExecuteW(NULL, _T("open"), cmdInfo.exePath.c_str(), itemFullName.c_str(), NULL, SW_NORMAL);
+					}
+				}
+			}
 			else
 			{
 				SendMessage(GetCoreInterface()->GetMainWindow(), WM_COMMAND, MAKEWPARAM(command, 0), 0);
