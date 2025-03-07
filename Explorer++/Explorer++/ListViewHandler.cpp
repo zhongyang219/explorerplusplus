@@ -449,13 +449,15 @@ void Explorerplusplus::OnListViewItemRClick(POINT *pCursorPos)
 				iItem = ListView_GetNextItem(m_hActiveListView, iItem, LVNI_SELECTED);
 				if (iItem >= 0 && !bSeenDirectory)
 				{
-					auto itemFullName = m_pActiveShellBrowser->GetItemFullName(iItem);
+					std::wstring arg = L"\"";
+					arg += m_pActiveShellBrowser->GetItemFullName(iItem);
+					arg += L"\"";
 					int cmdIndex = command - SHELL_CMD_ID_START;
 					if (cmdIndex >= 0 && cmdIndex < static_cast<int>(shellCmdList.size()))
 					{
 						const auto& cmdInfo = shellCmdList[cmdIndex];
 						if (!cmdInfo.exePath.empty())
-							ShellExecuteW(NULL, _T("open"), cmdInfo.exePath.c_str(), itemFullName.c_str(), NULL, SW_NORMAL);
+							ShellExecuteW(NULL, _T("open"), cmdInfo.exePath.c_str(), arg.c_str(), NULL, SW_NORMAL);
 					}
 				}
 			}

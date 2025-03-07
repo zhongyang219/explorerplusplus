@@ -1586,10 +1586,10 @@ static std::wstring GetCommandExePath(const std::wstring command)
 			return command.substr(index1 + 1, index2 - index1 - 1);
 		}
 	}
-	return std::wstring();
+	return command;
 }
 
-static RegShellCmdInfo GetRegShellInfo(HKEY hKey, const std::wstring& subKey)
+static RegShellCmdInfo GetRegShellInfo(HKEY hRootKey, HKEY hKey, const std::wstring& subKey)
 {
 	RegShellCmdInfo info;
 	info.displayName = GetRegKeyString(hKey, NULL);
@@ -1599,7 +1599,7 @@ static RegShellCmdInfo GetRegShellInfo(HKEY hKey, const std::wstring& subKey)
 	//打开command
 	HKEY hCommandKey;
 	std::wstring commandKey = subKey + L"\\command";
-	if (RegOpenKeyExW(HKEY_CURRENT_USER, commandKey.c_str(), 0, KEY_READ, &hCommandKey) == ERROR_SUCCESS)
+	if (RegOpenKeyExW(hRootKey, commandKey.c_str(), 0, KEY_READ, &hCommandKey) == ERROR_SUCCESS)
 	{
 		info.commnad = GetRegKeyString(hCommandKey, NULL);
 		// 提取命令的exe文件
@@ -1609,11 +1609,11 @@ static RegShellCmdInfo GetRegShellInfo(HKEY hKey, const std::wstring& subKey)
 	return info;
 }
 
-void GetRegShellCommand(std::vector<RegShellCmdInfo> &shellCommandList)
+static void GetRegShellCommand(HKEY hRootKey, std::vector<RegShellCmdInfo>& shellCommandList)
 {
 	const wchar_t *keyPath = L"SOFTWARE\\Classes\\*\\shell\\";
 	HKEY hKey;
-	if (RegOpenKeyExW(HKEY_CURRENT_USER, keyPath, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+	if (RegOpenKeyExW(hRootKey, keyPath, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
 	{
 		return;
 	}
@@ -1622,21 +1622,33 @@ void GetRegShellCommand(std::vector<RegShellCmdInfo> &shellCommandList)
 	DWORD subKeyNameSize = MAX_PATH;
 	DWORD index = 0;
 
-	while (RegEnumKeyExW(hKey, index, subKeyName, &subKeyNameSize, NULL, NULL, NULL, NULL)
-		== ERROR_SUCCESS)
+	while (true)
 	{
+		LSTATUS ls = RegEnumKeyExW(hKey, index, subKeyName, &subKeyNameSize, NULL, NULL, NULL, NULL);
+		if (ls == ERROR_NO_MORE_ITEMS)
+			break;
+		if (ls != ERROR_SUCCESS)
+			continue;
 		HKEY hSubKey;
 		std::wstring subKey = keyPath;
 		subKey += subKeyName;
-		if (RegOpenKeyExW(HKEY_CURRENT_USER, subKey.c_str(), 0, KEY_READ, &hSubKey) == ERROR_SUCCESS)
+		if (RegOpenKeyExW(hRootKey, subKey.c_str(), 0, KEY_READ, &hSubKey) == ERROR_SUCCESS)
 		{
-			RegShellCmdInfo info = GetRegShellInfo(hSubKey, subKey);
+			RegShellCmdInfo info = GetRegShellInfo(hRootKey, hSubKey, subKey);
 			info.keyName = subKeyName;
-			shellCommandList.push_back(info);
+			if (!info.displayName.empty() && !info.exePath.empty() && PathFileExistsW(info.exePath.c_str()))
+				shellCommandList.push_back(info);
 			RegCloseKey(hSubKey);
 		}
+		subKeyNameSize = MAX_PATH;
 		index++;
 	}
 
 	RegCloseKey(hKey);
+}
+
+void GetRegShellCommand(std::vector<RegShellCmdInfo> &shellCommandList)
+{
+	GetRegShellCommand(HKEY_CURRENT_USER, shellCommandList);
+	GetRegShellCommand(HKEY_LOCAL_MACHINE, shellCommandList);
 }
